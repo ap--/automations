@@ -6,6 +6,12 @@ ways to implement the automations.
 
 ## Descriptions
 
+#### Search notifications from Image.sc
+
+[imagesc_search_notifications.yaml](.github/workflows/imagesc_search_notifications.yaml)
+creates a new issue everytime a new post or topic matching a search is posted on
+[Image.sc](https://forum.image.sc). Runs once a day.
+
 ## Info
 
 Built by Andreas Poehlmann, free to use for anyone.

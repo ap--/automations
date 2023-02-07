@@ -1,0 +1,96 @@
+# Image.sc search notifications
+# =============================
+#
+# Creates a new issue on the repo for new image.sc posts for specific
+# search queries.
+#
+# I don't check Image.sc that often, but don't want to miss when a new
+# topic or post was created that matches my search terms. Since the API
+# functionality on discourse forums seems to require admin rights to
+# generate API keys, I created this hacky notification system. I'm
+# constantly on GitHub, so having the notifications appear here is
+# convenient.
+#
+name: Collect new Image.sc posts
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # to avoid having to store some state, we just rely on the
+    # cron job running daily. The code below checks if posts are
+    # newer than one day. search for: timedelta(days=1)
+    - cron: '0 8 * * *'
+
+jobs:
+  search:
+    name: "Image.sc search '${{ matrix.query }}'"
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 3
+      fail-fast: false
+      matrix:
+        query:
+          - "paquo order:latest"
+          - "tiffslide order:latest"
+    steps:
+
+      - name: query image.sc
+        run: |
+          curl \
+            --output q.json \
+            --fail \
+            --request GET \
+            --header "Accept: application/json, text/javascript, */*; q=0.01" \
+            --user-agent "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0" \
+            --get \
+            --data-urlencode "term=${{ matrix.query }}" \
+            https://forum.image.sc/search/query.json
+
+      - name: Find posts/topics newer than 24 hours
+        shell: python
+        run: |  
+          import json
+          import textwrap
+          from datetime import datetime
+          from datetime import timedelta
+          from datetime import timezone
+          with open("q.json") as f:
+            data = json.load(f)
+          markdown_links = []
+          for item in data["posts"]:
+            t0 = datetime.fromisoformat(item["created_at"].replace("Z", "+00:00"))
+            if datetime.now(timezone.utc) - t0 <= timedelta(days=1):
+              topic_id = item["topic_id"]
+              post_number = item["post_number"]
+              url = f"https://forum.image.sc/t/{topic_id}/{post_number}"
+              user = item["username"]
+              text = item["blurb"]
+              link = f"Post:: <{user}> {text}"
+              markdown_links.append(
+                (textwrap.shorten(link, width=72), url)
+              )
+          for item in data["topics"]:
+            t0 = datetime.fromisoformat(item["created_at"].replace("Z", "+00:00"))
+            if datetime.now(timezone.utc) - t0 <= timedelta(days=1):
+              topic_id = item["id"]
+              url = f"https://forum.image.sc/t/{topic_id}"
+              text = item["title"]
+              link = f"Topic:: {text}"
+              markdown_links.append(
+                (textwrap.shorten(link, width=72), url)
+              )
+          print("Found", len(markdown_links), "new posts/topics")
+          if markdown_links:
+            with open("issue_body.txt", "w") as f:
+              f.write("New posts and topics:\n")
+              for link_txt, url in markdown_links:
+                f.write("- [ ] [{link_txt}]({url})\n")
+
+      # Runs only if 'issue_body.txt' exists
+      - name: Create new issue
+        if: ${{ hashFiles('issue_body.txt') != '' }}
+        run: |
+          gh issue create \
+            --label "Image.sc" \
+            --title "New posts/topics $(date +'%Y-%m-%d'): '${{ matrix.query }}'" \
+            --body-file issue_body.txt
