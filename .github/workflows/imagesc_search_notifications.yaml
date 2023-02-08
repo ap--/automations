@@ -55,7 +55,7 @@ jobs:
             --data-urlencode "term=${{ matrix.query }}" \
             https://forum.image.sc/search/query.json
 
-      - name: Find posts/topics newer than 24 hours
+      - name: Find posts/topics newer than ${{ github.event.inputs.days || env.DEFAULT_DAYS }} days
         env:
           DAYS: ${{ github.event.inputs.days || env.DEFAULT_DAYS }}
         shell: python
@@ -103,6 +103,8 @@ jobs:
       # Runs only if 'issue_body.txt' exists
       - name: Create new issue
         if: ${{ hashFiles('issue_body.txt') != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh issue create \
             --label "Image.sc" \
