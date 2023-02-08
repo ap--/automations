@@ -109,6 +109,7 @@ jobs:
           GH_TOKEN: ${{ secrets.AUTOMATIONS_PAT_TOKEN }}
         run: |
           gh issue create \
+            --assignee "@me" \
             --label "Image.sc" \
             --title "New posts/topics $(date +'%Y-%m-%d'): '${{ matrix.query }}'" \
             --body-file issue_body.txt
