@@ -101,6 +101,11 @@ jobs:
                 f.write("- [ ] [{link_txt}]({url})\n")
 
       # Runs only if 'issue_body.txt' exists
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        if: ${{ hashFiles('issue_body.txt') != '' }}
+
+      # Runs only if 'issue_body.txt' exists
       - name: Create new issue
         if: ${{ hashFiles('issue_body.txt') != '' }}
         env:
