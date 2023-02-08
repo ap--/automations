@@ -42,8 +42,10 @@ jobs:
           - "paquo order:latest"
           - "tiffslide order:latest"
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: query image.sc
+      - name: Query image.sc
         run: |
           curl \
             --output q.json \
@@ -99,11 +101,6 @@ jobs:
               f.write("New posts and topics:\n")
               for link_txt, url in markdown_links:
                 f.write("- [ ] [{link_txt}]({url})\n")
-
-      # Runs only if 'issue_body.txt' exists
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        if: ${{ hashFiles('issue_body.txt') != '' }}
 
       # Runs only if 'issue_body.txt' exists
       - name: Create new issue
