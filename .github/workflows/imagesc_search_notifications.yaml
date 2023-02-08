@@ -100,7 +100,7 @@ jobs:
             with open("issue_body.txt", "w") as f:
               f.write("New posts and topics:\n")
               for link_txt, url in markdown_links:
-                f.write("- [ ] [{link_txt}]({url})\n")
+                f.write(f"- [ ] [{link_txt}]({url})\n")
 
       # Runs only if 'issue_body.txt' exists
       - name: Create new issue
@@ -108,8 +108,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AUTOMATIONS_PAT_TOKEN }}
         run: |
-          gh label list --json name
           gh issue create \
-            --label Image.sc \
+            --label "Image.sc" \
             --title "New posts/topics $(date +'%Y-%m-%d'): '${{ matrix.query }}'" \
             --body-file issue_body.txt
