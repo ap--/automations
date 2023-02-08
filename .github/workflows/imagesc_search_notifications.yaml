@@ -14,12 +14,21 @@
 name: Collect new Image.sc posts
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'find posts/topics more recent than [days]'
+        type: string
+        required: true
+        default: '1'  # adjust when changing the cron schedule
   schedule:
     # to avoid having to store some state, we just rely on the
     # cron job running daily. The code below checks if posts are
-    # newer than one day. search for: timedelta(days=1)
+    # newer than one day, see default above.
     - cron: '0 8 * * *'
+
+env:
+  DEFAULT_DAYS: '1'  # adjust when changing the cron schedule
 
 jobs:
   search:
@@ -47,19 +56,24 @@ jobs:
             https://forum.image.sc/search/query.json
 
       - name: Find posts/topics newer than 24 hours
+        env:
+          DAYS: ${{ github.event.inputs.days || env.DEFAULT_DAYS }}
         shell: python
         run: |  
           import json
+          import os
           import textwrap
           from datetime import datetime
           from datetime import timedelta
           from datetime import timezone
           with open("q.json") as f:
             data = json.load(f)
+          now = datetime.now(timezone.utc)
+          dt = timedelta(days=int(os.environ["DAYS"]))
           markdown_links = []
           for item in data["posts"]:
             t0 = datetime.fromisoformat(item["created_at"].replace("Z", "+00:00"))
-            if datetime.now(timezone.utc) - t0 <= timedelta(days=1):
+            if now - t0 <= dt:
               topic_id = item["topic_id"]
               post_number = item["post_number"]
               url = f"https://forum.image.sc/t/{topic_id}/{post_number}"
@@ -71,7 +85,7 @@ jobs:
               )
           for item in data["topics"]:
             t0 = datetime.fromisoformat(item["created_at"].replace("Z", "+00:00"))
-            if datetime.now(timezone.utc) - t0 <= timedelta(days=1):
+            if now - t0 <= dt:
               topic_id = item["id"]
               url = f"https://forum.image.sc/t/{topic_id}"
               text = item["title"]
