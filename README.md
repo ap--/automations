@@ -1,4 +1,4 @@
-# :robot: Automations for reoccurring GitHub tasks :robot:
+# :robot: Automations for reccurring GitHub tasks :robot:
 
 This repo is just a collection of tasks I want to happen automatically on
 GitHub. Feel free to ask questions in issues, or let me know if there are better
